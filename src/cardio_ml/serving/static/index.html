@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cardio ML — Triagem de Risco Cardiovascular</title>
+  <style>
+    :root {
+      --bg: #f8fafc; --card: #fff; --border: #e2e8f0; --text: #1e293b;
+      --muted: #64748b; --primary: #3b82f6; --primary-hover: #2563eb;
+      --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6; padding: 2rem 1rem;
+    }
+    .container { max-width: 720px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { font-size: 1.5rem; font-weight: 700; }
+    header p { color: var(--muted); font-size: 0.9rem; margin-top: 0.25rem; }
+    .card {
+      background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .card h2 {
+      font-size: 1rem; font-weight: 600; margin-bottom: 1rem;
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem; }
+    .field { display: flex; flex-direction: column; }
+    .field label { font-size: 0.8rem; font-weight: 500; color: var(--muted); margin-bottom: 0.25rem; }
+    .field input, .field select {
+      padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 8px;
+      font-size: 0.95rem; background: var(--bg); transition: border-color 0.15s;
+    }
+    .field input:focus, .field select:focus {
+      outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    .actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
+    button {
+      padding: 0.6rem 1.5rem; border: none; border-radius: 8px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn-secondary { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #f1f5f9; }
+    .result { display: none; }
+    .result.visible { display: block; }
+    .risk-badge {
+      display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem;
+      border-radius: 10px; font-size: 1.1rem; font-weight: 700; margin: 0.75rem 0;
+    }
+    .risk-badge .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .risk-baixo { background: #d1fae5; color: #065f46; }
+    .risk-baixo .dot { background: var(--success); }
+    .risk-moderado { background: #fef3c7; color: #92400e; }
+    .risk-moderado .dot { background: var(--warning); }
+    .risk-alto { background: #fee2e2; color: #991b1b; }
+    .risk-alto .dot { background: var(--danger); }
+    .prob-bar { height: 8px; border-radius: 4px; background: var(--border); overflow: hidden; margin: 0.5rem 0; }
+    .prob-bar .fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+    .details {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 0.5rem; margin-top: 0.75rem; font-size: 0.85rem;
+    }
+    .details .item {
+      display: flex; justify-content: space-between; padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .details .item .label { color: var(--muted); }
+    .patient-separator { margin: 1.25rem 0; border-top: 2px dashed var(--border); }
+    .error-msg {
+      background: #fee2e2; color: #991b1b; padding: 0.75rem 1rem;
+      border-radius: 8px; font-size: 0.9rem; display: none;
+    }
+    .error-msg.visible { display: block; }
+    .model-info { text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 2rem; }
+    .batch-section { margin-top: 1rem; }
+    .batch-section textarea {
+      width: 100%; min-height: 80px; padding: 0.5rem; border: 1px solid var(--border);
+      border-radius: 8px; font-family: monospace; font-size: 0.85rem; resize: vertical;
+    }
+    .batch-hint { font-size: 0.75rem; color: var(--muted); margin-top: 0.25rem; }
+    .tabs { display: flex; gap: 0; margin-bottom: 1rem; }
+    .tab {
+      padding: 0.5rem 1rem; border: 1px solid var(--border); background: var(--bg);
+      cursor: pointer; font-size: 0.85rem; font-weight: 500;
+    }
+    .tab:first-child { border-radius: 8px 0 0 8px; }
+    .tab:last-child { border-radius: 0 8px 8px 0; }
+    .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Cardio ML</h1>
+      <p>Triagem de risco cardiovascular com machine learning</p>
+    </header>
+
+    <div class="card">
+      <h2>Dados do paciente</h2>
+      <div class="tabs">
+        <div class="tab active" id="tab-btn-single">Paciente individual</div>
+        <div class="tab" id="tab-btn-batch">Lote (CSV)</div>
+      </div>
+
+      <div id="tab-single" class="tab-content active">
+        <div class="grid">
+          <div class="field"><label for="age_years">Idade (anos)</label><input type="number" id="age_years" value="55" min="18" max="100" step="1" /></div>
+          <div class="field"><label for="gender">Sexo</label><select id="gender"><option value="1">Feminino</option><option value="2" selected>Masculino</option></select></div>
+          <div class="field"><label for="height">Altura (cm)</label><input type="number" id="height" value="170" min="120" max="230" /></div>
+          <div class="field"><label for="weight">Peso (kg)</label><input type="number" id="weight" value="78" min="30" max="250" step="0.1" /></div>
+          <div class="field"><label for="ap_hi">Pressao sistolica (mmHg)</label><input type="number" id="ap_hi" value="140" min="60" max="260" /></div>
+          <div class="field"><label for="ap_lo">Pressao diastolica (mmHg)</label><input type="number" id="ap_lo" value="90" min="30" max="180" /></div>
+          <div class="field"><label for="cholesterol">Colesterol</label><select id="cholesterol"><option value="1">Normal</option><option value="2" selected>Acima do normal</option><option value="3">Muito acima</option></select></div>
+          <div class="field"><label for="gluc">Glicose</label><select id="gluc"><option value="1" selected>Normal</option><option value="2">Acima do normal</option><option value="3">Muito acima</option></select></div>
+          <div class="field"><label for="smoke">Tabagismo</label><select id="smoke"><option value="0" selected>Nao</option><option value="1">Sim</option></select></div>
+          <div class="field"><label for="alco">Consumo de alcool</label><select id="alco"><option value="0" selected>Nao</option><option value="1">Sim</option></select></div>
+          <div class="field"><label for="active">Atividade fisica</label><select id="active"><option value="0">Nao</option><option value="1" selected>Sim</option></select></div>
+        </div>
+      </div>
+
+      <div id="tab-batch" class="tab-content">
+        <div class="batch-section">
+          <textarea id="csv-input" placeholder="age_years,height,weight,ap_hi,ap_lo,gender,cholesterol,gluc,smoke,alco,active&#10;55,170,78,140,90,1,2,1,0,0,1&#10;35,175,70,115,75,2,1,1,0,0,1"></textarea>
+          <p class="batch-hint">Cole dados CSV com cabecalho. Formato: age_years, height, weight, ap_hi, ap_lo, gender, cholesterol, gluc, smoke, alco, active</p>
+          <button class="btn-secondary" id="btn-sample" style="margin-top:0.5rem;font-size:0.8rem;">Colar dados de teste</button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" id="btn-predict">Analisar</button>
+        <button class="btn-secondary" id="btn-reset">Limpar</button>
+      </div>
+    </div>
+
+    <div class="error-msg" id="error"></div>
+
+    <div class="card result" id="result">
+      <h2>Resultado</h2>
+      <div id="result-content"></div>
+    </div>
+
+    <div class="model-info" id="model-info"></div>
+  </div>
+
+  <script>
+    var API_BASE = window.location.origin;
+    var currentTab = "single";
+    var RISK_LABELS = { baixo: "Baixo risco", moderado: "Risco moderado", alto: "Alto risco" };
+    var BAR_COLORS = { baixo: "var(--success)", moderado: "var(--warning)", alto: "var(--danger)" };
+
+    document.getElementById("tab-btn-single").addEventListener("click", function() { switchTab("single"); });
+    document.getElementById("tab-btn-batch").addEventListener("click", function() { switchTab("batch"); });
+    document.getElementById("btn-predict").addEventListener("click", predict);
+    document.getElementById("btn-reset").addEventListener("click", resetForm);
+    document.getElementById("btn-sample").addEventListener("click", function() {
+      var sample = [
+        "age_years,height,weight,ap_hi,ap_lo,gender,cholesterol,gluc,smoke,alco,active",
+        "62,165,85,150,95,1,3,1,0,0,0",
+        "45,180,72,120,80,2,1,1,0,0,1",
+        "58,160,90,145,92,1,2,2,1,0,0",
+        "38,175,68,115,75,2,1,1,0,0,1",
+        "70,155,78,160,100,1,3,3,0,1,0",
+        "52,172,82,135,88,2,2,1,0,0,1",
+        "41,168,65,118,78,1,1,1,0,0,1",
+        "67,162,95,155,98,1,3,2,1,1,0",
+      ].join("\n");
+      document.getElementById("csv-input").value = sample;
+    });
+
+    function switchTab(tab) {
+      currentTab = tab;
+      document.getElementById("tab-btn-single").classList.toggle("active", tab === "single");
+      document.getElementById("tab-btn-batch").classList.toggle("active", tab === "batch");
+      document.getElementById("tab-single").classList.toggle("active", tab === "single");
+      document.getElementById("tab-batch").classList.toggle("active", tab === "batch");
+    }
+
+    function getFormPatient() {
+      var fields = ["age_years", "height", "weight", "ap_hi", "ap_lo"];
+      var selects = ["gender", "cholesterol", "gluc", "smoke", "alco", "active"];
+      var patient = {};
+      fields.forEach(function(f) { patient[f] = parseFloat(document.getElementById(f).value); });
+      selects.forEach(function(f) { patient[f] = parseInt(document.getElementById(f).value); });
+      return patient;
+    }
+
+    function parseCsv(text) {
+      var lines = text.trim().split("\n").filter(function(l) { return l.trim(); });
+      if (lines.length < 2) throw new Error("CSV precisa de cabecalho + pelo menos 1 linha.");
+      var headers = lines[0].split(",").map(function(h) { return h.trim(); });
+      var required = ["age_years","height","weight","ap_hi","ap_lo","gender","cholesterol","gluc","smoke","alco","active"];
+      var missing = required.filter(function(r) { return headers.indexOf(r) === -1; });
+      if (missing.length) throw new Error("Colunas ausentes: " + missing.join(", "));
+      var floatCols = ["age_years","height","weight","ap_hi","ap_lo"];
+      var patients = [];
+      for (var i = 1; i < lines.length; i++) {
+        var values = lines[i].split(",").map(function(v) { return v.trim(); });
+        if (values.length !== headers.length) continue;
+        var p = {};
+        headers.forEach(function(h, idx) {
+          p[h] = floatCols.indexOf(h) !== -1 ? parseFloat(values[idx]) : parseInt(values[idx]);
+        });
+        patients.push(p);
+      }
+      return patients;
+    }
+
+    function predict() {
+      var btn = document.getElementById("btn-predict");
+      var errorEl = document.getElementById("error");
+      var resultEl = document.getElementById("result");
+      btn.disabled = true;
+      btn.textContent = "Analisando...";
+      errorEl.classList.remove("visible");
+      resultEl.classList.remove("visible");
+
+      var patients;
+      try {
+        patients = currentTab === "single" ? [getFormPatient()] : parseCsv(document.getElementById("csv-input").value);
+      } catch (err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("visible");
+        btn.disabled = false;
+        btn.textContent = "Analisar";
+        return;
+      }
+
+      fetch(API_BASE + "/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ patients: patients }),
+      })
+      .then(function(r) {
+        if (!r.ok) return r.json().then(function(e) { throw new Error(e.detail || "Erro " + r.status); });
+        return r.json();
+      })
+      .then(function(data) { renderResults(data, patients); })
+      .catch(function(err) {
+        errorEl.textContent = err.message;
+        errorEl.classList.add("visible");
+      })
+      .finally(function() {
+        btn.disabled = false;
+        btn.textContent = "Analisar";
+      });
+    }
+
+    function renderResults(data, patients) {
+      var container = document.getElementById("result-content");
+      while (container.firstChild) container.removeChild(container.firstChild);
+
+      data.predictions.forEach(function(pred, i) {
+        if (i > 0) {
+          var sep = document.createElement("div");
+          sep.className = "patient-separator";
+          container.appendChild(sep);
+        }
+        var patient = patients[i];
+        var prob = pred.probability != null ? pred.probability : 0.5;
+        var pct = (prob * 100).toFixed(1);
+        var bmi = (patient.weight / Math.pow(patient.height / 100, 2)).toFixed(1);
+
+        // Patient label (for batch)
+        if (patients.length > 1) {
+          var label = document.createElement("p");
+          label.style.fontWeight = "600";
+          label.style.marginBottom = "0.5rem";
+          label.textContent = "Paciente " + (i + 1);
+          container.appendChild(label);
+        }
+
+        // Risk badge
+        var badge = document.createElement("div");
+        badge.className = "risk-badge risk-" + pred.risk_level;
+        var dot = document.createElement("span");
+        dot.className = "dot";
+        badge.appendChild(dot);
+        badge.appendChild(document.createTextNode(" " + RISK_LABELS[pred.risk_level]));
+        container.appendChild(badge);
+
+        // Probability text
+        var probText = document.createElement("div");
+        probText.style.fontSize = "0.9rem";
+        probText.style.color = "var(--muted)";
+        var probStrong = document.createElement("strong");
+        probStrong.textContent = pct + "%";
+        probText.appendChild(document.createTextNode("Probabilidade de doenca cardiovascular: "));
+        probText.appendChild(probStrong);
+        container.appendChild(probText);
+
+        // Progress bar
+        var bar = document.createElement("div");
+        bar.className = "prob-bar";
+        var fill = document.createElement("div");
+        fill.className = "fill";
+        fill.style.width = pct + "%";
+        fill.style.background = BAR_COLORS[pred.risk_level];
+        bar.appendChild(fill);
+        container.appendChild(bar);
+
+        // Details grid
+        var details = document.createElement("div");
+        details.className = "details";
+        var items = [
+          ["Classe predita", pred.predicted_class === 1 ? "Positivo" : "Negativo"],
+          ["Idade", patient.age_years + " anos"],
+          ["Pressao", patient.ap_hi + "/" + patient.ap_lo + " mmHg"],
+          ["IMC", bmi],
+        ];
+        items.forEach(function(pair) {
+          var item = document.createElement("div");
+          item.className = "item";
+          var lbl = document.createElement("span");
+          lbl.className = "label";
+          lbl.textContent = pair[0];
+          var val = document.createElement("span");
+          val.textContent = pair[1];
+          item.appendChild(lbl);
+          item.appendChild(val);
+          details.appendChild(item);
+        });
+        container.appendChild(details);
+      });
+
+      document.getElementById("result").classList.add("visible");
+    }
+
+    function resetForm() {
+      document.getElementById("age_years").value = 55;
+      document.getElementById("height").value = 170;
+      document.getElementById("weight").value = 78;
+      document.getElementById("ap_hi").value = 140;
+      document.getElementById("ap_lo").value = 90;
+      document.getElementById("gender").value = 2;
+      document.getElementById("cholesterol").value = 2;
+      document.getElementById("gluc").value = 1;
+      document.getElementById("smoke").value = 0;
+      document.getElementById("alco").value = 0;
+      document.getElementById("active").value = 1;
+      document.getElementById("csv-input").value = "";
+      document.getElementById("result").classList.remove("visible");
+      document.getElementById("error").classList.remove("visible");
+    }
+
+    fetch(API_BASE + "/model-info")
+      .then(function(r) { return r.json(); })
+      .then(function(info) {
+        document.getElementById("model-info").textContent =
+          "Modelo: " + info.name + " v" + info.version + " (" + info.stage + ")";
+      })
+      .catch(function() {});
+  </script>
+</body>
+</html>

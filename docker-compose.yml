@@ -1,0 +1,54 @@
+# docker-compose.yml — Reproducible local environment
+#
+# Services:
+#   api    — FastAPI serving the Production model from MLflow Registry.
+#   mlflow — MLflow UI for inspecting experiments and model versions.
+#
+# Usage:
+#   docker compose up --build api         # start only the API (with resource limits)
+#   docker compose up --build mlflow      # start only the MLflow UI
+#   docker compose up --build             # start both
+#
+# Notes:
+#   - The ./mlruns directory is mounted in both containers. If you already ran
+#     `make experiment` locally, the runs appear automatically.
+#   - CPU and memory limits are set to prevent the service from consuming all
+#     resources on the reviewer's machine.
+
+services:
+  api:
+    build: .
+    image: cardio-ml-api:latest
+    container_name: cardio-api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlruns:/app/mlruns:ro
+    environment:
+      MLFLOW_TRACKING_URI: file:///app/mlruns
+      CARDIO_N_JOBS: "2"
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 2g
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.14.3
+    container_name: cardio-mlflow-ui
+    ports:
+      - "5001:5001"
+    volumes:
+      - ./mlruns:/mlruns
+    command: >
+      mlflow ui
+      --host 0.0.0.0
+      --port 5001
+      --backend-store-uri file:///mlruns
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1g
+    restart: unless-stopped

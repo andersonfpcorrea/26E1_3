@@ -1,0 +1,18 @@
+# Dependencias de runtime do Lambda handler + teste.
+# O pacote cardio_ml e instalado separadamente via `uv pip install -e ../../..`
+# (sem deps, pois as de runtime ja estao aqui).
+
+# Runtime
+scikit-learn>=1.4,<1.6
+xgboost>=2.0,<3.0
+pandas>=2.1,<2.3
+numpy>=1.26,<2.0
+fastapi>=0.110,<1.0
+pydantic>=2.6,<3.0
+joblib>=1.3,<2.0
+psutil>=5.9,<6.0
+mangum>=0.19,<1.0
+
+# Teste
+pytest>=8.0,<9.0
+httpx>=0.27,<1.0

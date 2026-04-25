@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cardio-ml"
+version = "0.1.0"
+description = "Machine learning engineering project for cardiovascular disease classification"
+readme = "README.md"
+requires-python = ">=3.10,<3.13"
+authors = [{ name = "Anderson Correa" }]
+license = { text = "MIT" }
+
+dependencies = [
+    "numpy>=1.26,<2.0",
+    "pandas>=2.1,<2.3",
+    "scikit-learn>=1.4,<1.6",
+    "xgboost>=2.0,<3.0",
+    "mlflow>=2.14,<3.0",
+    "fastapi>=0.110,<1.0",
+    "uvicorn[standard]>=0.27,<1.0",
+    "pydantic>=2.6,<3.0",
+    "evidently>=0.4.25,<0.5",
+    "psutil>=5.9,<6.0",
+    "joblib>=1.3,<2.0",
+    "matplotlib>=3.8,<4.0",
+    "seaborn>=0.13,<1.0",
+    "scipy>=1.11,<2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0,<9.0",
+    "pytest-cov>=4.1,<6.0",
+    "ruff>=0.5,<1.0",
+    "httpx>=0.27,<1.0",
+    "jupyter>=1.0,<2.0",
+    "ipykernel>=6.29,<7.0",
+]
+
+[project.scripts]
+cardio-train = "cardio_ml.training.train:main"
+cardio-select = "scripts.select_final_model:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4", "SIM"]
+# N803/N806: permitimos nomes maiusculos (`X`, `X_train`) — convencao universal
+# do scikit-learn para matrizes de features. E501: line length ja controlada.
+ignore = ["E501", "N803", "N806"]
+
+[tool.ruff.format]
+quote-style = "double"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: testes que demandam mais tempo",
+    "integration: testes de integracao",
+]

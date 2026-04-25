@@ -1,0 +1,63 @@
+requirements.html
+
+# Ambiente Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+.env
+
+# Distribuicao / build
+build/
+dist/
+*.egg-info/
+*.egg
+pip-log.txt
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+
+# Artefatos de ML
+# Nao versionamos o store local do MLflow nem modelos pesados;
+# os runs sao reproduziveis via pipeline.
+mlruns/
+mlartifacts/
+models/*.joblib
+models/*.pkl
+data/processed/
+reports/
+!reports/.gitkeep
+
+# Testes / cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+.cache
+.ruff_cache
+
+# Ambiente IDE
+.vscode/
+.idea/
+*.swp
+
+# macOS
+.DS_Store
+
+# Arquivos locais do projeto
+.remember/
+.claude/
+PLAN.md
+.learning/
+logs/
+
+# AWS CDK / Lambda
+aws/cdk.out/
+aws/dist/
+aws/node_modules/
+aws/src/lambda/model/*.joblib
+aws/src/lambda/.venv/

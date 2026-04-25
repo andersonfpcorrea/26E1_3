@@ -1,0 +1,27 @@
+{
+  "name": "cardio-ml-aws",
+  "version": "0.1.0",
+  "description": "Infraestrutura AWS (CDK) e Lambda para o projeto Cardio ML",
+  "scripts": {
+    "build": "tsc",
+    "cdk": "cdk",
+    "synth": "cdk synth",
+    "deploy": "./deploy.sh",
+    "destroy": "./destroy.sh",
+    "lambda:setup": "cd src/lambda && uv venv && uv pip install -r requirements.txt && uv pip install -e ../../.. --no-deps",
+    "lambda:test": "cd src/lambda && uv run --no-project pytest handler_test.py -v",
+    "lambda:run": "cd src/lambda && uv run --no-project python -c \"from handler import handler; print(handler({'source': 'aws.events'}, None))\"",
+    "test": "npm run lambda:test",
+    "pretest": "test -d src/lambda/.venv || npm run lambda:setup"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.170.0",
+    "constructs": "^10.4.0",
+    "source-map-support": "^0.5.21"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.17",
+    "ts-node": "^10.9.0",
+    "typescript": "~5.7.0"
+  }
+}
