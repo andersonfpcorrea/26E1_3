@@ -2,7 +2,7 @@
 
 **Aluno:** Anderson Corrêa
 
-**Disciplina:** Fundamentos de Machine Learning com Scikit-Learn — 26E1_3
+**Disciplina:** Operacionalização de Modelos com MLOps [26E1_3]
 
 Este repositório é a **evolução** do [projeto anterior (26E1_2)](https://github.com/andersonfpcorrea/26E1_2). O foco deixa de ser o _algoritmo isolado_ e passa a ser o _projeto de ML como um sistema_: pipelines reutilizáveis, rastreamento de experimentos, modelo versionado, serviço de inferência, monitoramento e estratégia de re-treinamento.
 
