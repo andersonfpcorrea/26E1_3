@@ -19,6 +19,12 @@ Este repositório é a **evolução** do [projeto anterior (26E1_2)](https://git
                     │         make experiment           │
                     └───────────────┬───────────────────┘
                                     │
+                                    ▼
+                    ┌───────────────────────────────────┐
+                    │   Preprocessamento                │
+                    │   StandardScaler + OneHotEncoder  │
+                    └───────────────┬───────────────────┘
+                                    │
               ┌─────────────────────┼─────────────────────┐
               ▼                     ▼                     ▼
         ┌──────────┐         ┌──────────┐         ┌──────────┐
@@ -36,13 +42,13 @@ Este repositório é a **evolução** do [projeto anterior (26E1_2)](https://git
                                   │
                                   ▼
                     ┌───────────────────────────────────┐
-                    │       MLflow (15 runs)            │
-                    │   params + métricas + modelos     │
+                    │       MLflow (15 runs)             │
+                    │   params + métricas + modelos      │
                     └───────────────┬───────────────────┘
                                     │
                                     ▼  make select
                     ┌───────────────────────────────────┐
-                    │   Score composto                  │
+                    │   Score composto                   │
                     │   60% F1 + 25% custo + 15% tempo  │
                     └───────────────┬───────────────────┘
                                     │
